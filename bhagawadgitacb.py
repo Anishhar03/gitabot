@@ -1,14 +1,15 @@
 from langchain_google_genai import ChatGoogleGenerativeAI
-from dotenv import load_dotenv
+from langchain_core.prompts import PromptTemplate
+import os
 import streamlit as st
 
-# Load environment variables
-load_dotenv()
+# Load Google API key from Streamlit secrets or fallback to local env
+os.environ["GOOGLE_API_KEY"] = st.secrets.get("GOOGLE_API_KEY", os.getenv("GOOGLE_API_KEY"))
 
-# Initialize the Gemini model
-model = ChatGoogleGenerativeAI(model='gemini-2.0-flash')
+# Initialize Gemini model
+model = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 
-# Streamlit UI setup
+# Streamlit UI config
 st.set_page_config(page_title="Bhagavad Gita Chatbot", layout="centered")
 st.title("🕉️ Bhagavad Gita Wisdom Chatbot")
 st.markdown("""
@@ -16,24 +17,22 @@ Ask anything about the Bhagavad Gita – its teachings, verses, interpretations,
 Choose your preferred style of response.
 """)
 
-# Initialize session state for chat history
+# Chat history
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-# Style and tone options
+# Style options
 style = st.selectbox("Choose Explanation Style:", [
     "Simple & Spiritual",
     "Detailed with Sanskrit References",
     "Philosophical & Reflective",
-    "Action-Oriented Advice",
+    "Action-Oriented Advice"
 ])
 
 # User input
 user_question = st.text_area("🧘‍♂️ What would you like to ask Krishna?", "What does Krishna say about duty?")
 
 # Prompt Template
-from langchain_core.prompts import PromptTemplate
-
 prompt_template = PromptTemplate(
     input_variables=["question", "style"],
     template="""
@@ -48,15 +47,13 @@ Avoid deviating from the core message of the Gita.
 """
 )
 
-# Generate response
+# Handle question
 if st.button("🕉️ Ask Krishna") and user_question.strip():
     final_prompt = prompt_template.format(question=user_question, style=style)
     response = model.invoke(final_prompt)
-
-    # Append to chat history
     st.session_state.chat_history.append((user_question, response.content))
 
-# Display chat history
+# Show chat history
 if st.session_state.chat_history:
     st.subheader("📜 Chat History")
     for i, (q, a) in enumerate(reversed(st.session_state.chat_history), 1):
@@ -64,7 +61,7 @@ if st.session_state.chat_history:
         st.markdown(f"_A{i}:_ {a}")
         st.markdown("---")
 
-# Button to delete chat history
+# Clear chat history
 if st.button("🗑️ DELETE HISTORY"):
     st.session_state.chat_history = []
     st.success("Chat history deleted.")
